@@ -3,17 +3,20 @@ package com.example.demo;
 public class Book {
 	private int id;
 	private String title;
-	private double price;
+	private int copiesAvailable;
 	
-	public Book(int id, String title, double price) {
-		this.id = id;
+	public Book(int id, String title, int copiesAvailable) {
 		this.title = title;
-		this.price = price
+		this.copiesAvailable = copiesAvailable;
 	}
 	
 	public int getId() {
-		return it;
+		return this.id;
 	}
+	
+	public void setId(int id) {
+        this.id = id;
+    }
 	
 	public void setTitle(String title) {
 		this.title = title;
@@ -23,11 +26,11 @@ public class Book {
 		return title;
 	}
 
-	public void setPrice(double price) {
-		this.price = price;
+	public void setCopiesAvailable(int copiesAvailable) {
+		this.copiesAvailable = copiesAvailable;
 	}
 	
-	public int getPrice() {
-		return price;
+	public int getCopiesAvailable() {
+		return copiesAvailable;
 	}
 }
