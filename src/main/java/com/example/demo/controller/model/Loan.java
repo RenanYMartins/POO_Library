@@ -16,6 +16,4 @@ public class Loan {
 		this.loanDate = loanDate;
 		this.returnDate = loanDate.plusDays(7);
 	}
-	
-	
 }
