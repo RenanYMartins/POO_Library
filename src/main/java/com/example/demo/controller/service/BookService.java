@@ -23,7 +23,7 @@ public class BookService {
 
     public Book getBookById(int id) throws SQLException, ClassNotFoundException {
         if (id <= 0) {
-            throw new IllegalArgumentException("O ID do livro deve ser maior que zero.");
+            throw new IllegalArgumentException("The ID must be > zero");
         }
         return daoBook.getById(id);
     }

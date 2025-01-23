@@ -13,26 +13,28 @@ import java.util.List;
 
 @Component
 public class DAOBook {
-    public DAOBook() {}
+    public DAOBook() throws SQLException, ClassNotFoundException {
+    	this.createTable();
+    }
 
     public void createTable() throws SQLException, ClassNotFoundException {
         final Connection conn = MySQLConn.getConnection();
 
         if (conn == null) {
-            System.err.println("Conexão com o banco de dados não foi estabelecida.");
+            System.err.println("Connection with database failed :(");
             return;
         }
 
         String sql = "CREATE TABLE IF NOT EXISTS BOOK ("
                 + "id INT AUTO_INCREMENT PRIMARY KEY, "
                 + "title VARCHAR(255) NOT NULL, "
-                + "copiesAvailable INT NOT NULL)";
+                + "copiesAvailable INT NOT NULL);";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.executeUpdate();
-            System.out.println("Tabela de livros criada com sucesso!");
+            System.out.println("Book table created!");
         } catch (SQLException e) {
-            System.err.println("Erro ao criar a tabela: " + e.getMessage());
+            System.err.println("Error while creating book table: " + e.getMessage());
             throw e;
         }
     }
@@ -54,13 +56,13 @@ public class DAOBook {
             }
 
             books.forEach(book -> {
-                System.out.println("Livro ID: " + book.getId());
-                System.out.println("Título: " + book.getTitle());
-                System.out.println("Quantidade: " + book.getCopiesAvailable());
+                System.out.println("Book ID: " + book.getId());
+                System.out.println("Title: " + book.getTitle());
+                System.out.println("Amount: " + book.getCopiesAvailable());
             });
 
         } catch (ClassNotFoundException | SQLException e) {
-            System.err.println("Erro ao buscar livros: " + e.getMessage());
+            System.err.println("Error while searching the books: " + e.getMessage());
             throw e;
         }
 
@@ -85,10 +87,9 @@ public class DAOBook {
                 }
             }
         } catch (ClassNotFoundException | SQLException e) {
-            System.err.println("Erro ao buscar livro por ID: " + e.getMessage());
+            System.err.println("Error while searching a book by ID: " + e.getMessage());
             throw e;
         }
-
         return bookDTO;
     }
 
@@ -109,7 +110,7 @@ public class DAOBook {
             ps.execute();
             System.out.println("Livro cadastrado com sucesso!");
         } catch (SQLException e) {
-            System.err.println("Erro ao inserir livro: " + e.getMessage());
+            System.err.println("Error while creating book: " + e.getMessage());
             throw e;
         }
     }
