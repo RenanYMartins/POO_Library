@@ -44,7 +44,7 @@ public class BookController {
     public ResponseEntity<String> insertBook(@RequestBody Book book) {
         try {
             bookService.createBook(book);
-            return new ResponseEntity<>("Livro criado com sucesso!", HttpStatus.CREATED);
+            return new ResponseEntity<>("Book created successfully!", HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
@@ -56,11 +56,11 @@ public class BookController {
     public ResponseEntity<String> update(@PathVariable int id, @RequestBody Book book) {
         try {
             bookService.updateBook(id, book);
-            return new ResponseEntity<>("Livro atualizado com sucesso!", HttpStatus.OK);
+            return new ResponseEntity<>("Book updated successfully!", HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            return new ResponseEntity<>("Erro ao atualizar livro.", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error updating book.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -68,11 +68,11 @@ public class BookController {
     public ResponseEntity<String> delete(@PathVariable int id) {
         try {
             bookService.deleteBook(id);
-            return new ResponseEntity<>("Livro deletado com sucesso!", HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>("Book deleted successfully!", HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            return new ResponseEntity<>("Erro ao deletar livro.", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error when deleting book.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

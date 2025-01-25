@@ -25,17 +25,26 @@ public class BookService {
         if (id <= 0) {
             throw new IllegalArgumentException("The ID must be > zero");
         }
-        return daoBook.getById(id);
+        
+        Book book = daoBook.getById(id);
+        if(book != null) {
+        	return book;
+        } else {
+        	throw new IllegalArgumentException("A book with this ID does not exist.");
+        }
     }
 
     public void createBook(Book book) throws SQLException, ClassNotFoundException {
         validateBook(book);
+        if (daoBook.existsByTitle(book.getTitle())) {
+            throw new IllegalArgumentException("A book with this title already exists.");
+        }
         daoBook.create(book);
     }
 
     public void updateBook(int id, Book book) throws SQLException, ClassNotFoundException {
         if (daoBook.getById(id) == null) {
-            throw new IllegalArgumentException("Livro não encontrado para atualização.");
+            throw new IllegalArgumentException("Book not found for update.");
         }
 
         book.setId(id);
@@ -45,19 +54,22 @@ public class BookService {
 
     public void deleteBook(int id) throws SQLException, ClassNotFoundException {
         if (daoBook.getById(id) == null) {
-            throw new IllegalArgumentException("Livro não encontrado para exclusão.");
+            throw new IllegalArgumentException("Book not found for deletion.");
         }
         Book book = new Book();
         book.setId(id);
-        daoBook.delete(book);
+        boolean bookDeleted = daoBook.delete(book);
+        if (!bookDeleted) {
+            throw new RuntimeException("Failed to delete the book. Please try again.");
+        }
     }
 
     private void validateBook(Book book) {
         if (book.getTitle() == null || book.getTitle().trim().isEmpty()) {
-            throw new IllegalArgumentException("O título do livro não pode ser vazio.");
+            throw new IllegalArgumentException("The book title cannot be empty.");
         }
         if (book.getCopiesAvailable() < 0) {
-            throw new IllegalArgumentException("A quantidade de cópias disponíveis não pode ser negativa.");
+            throw new IllegalArgumentException("The number of available copies cannot be negative.");
         }
     }
 }
