@@ -31,8 +31,9 @@ public class DAOLoan {
         String sql = "CREATE TABLE IF NOT EXISTS LOAN ("
                 + "id INT AUTO_INCREMENT PRIMARY KEY, "
                 + "borrowerName VARCHAR(100) NOT NULL, "
-                + "loanDate DATETIME NOT NULL, "
-                + "returnDate INT NOT NULL);";
+                + "loanDate DATE NOT NULL, "
+                + "returnDate DATE,"
+                + "returned TINYINT(1) NOT NULL DEFAULT 0);";
 
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -65,6 +66,7 @@ public class DAOLoan {
                 if (returnDate != null) {
                 	loanDTO.setReturnDate(returnDate.toLocalDate());
                 }
+                loanDTO.setReturned(rs.getBoolean("returned"));
                 loans.add(loanDTO);
             }
 
@@ -73,6 +75,7 @@ public class DAOLoan {
                 System.out.println("Borrower Name : " + loan.getBorrowerName());
                 System.out.println("Loan Date: " + loan.getLoanDate());
                 System.out.println("Return Date: " + loan.getReturnDate());
+                System.out.println("Empréstimo ativo: " + loan.getIsReturned());
             });
 
         } catch (ClassNotFoundException | SQLException e) {
@@ -105,6 +108,7 @@ public class DAOLoan {
                     if (returnDate != null) {
                     	loanDTO.setReturnDate(returnDate.toLocalDate());
                     }
+                    loanDTO.setReturned(rs.getBoolean("returned"));
                 }
             }
         } catch (ClassNotFoundException | SQLException e) {
@@ -123,12 +127,13 @@ public class DAOLoan {
             return;
         }
 
-        String sql = "INSERT INTO LOAN (borrowerName, localDate, returnDate) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO LOAN (borrowerName, loanDate, returnDate) VALUES (?, ?, ?)";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, loan.getBorrowerName());
             ps.setDate(2, java.sql.Date.valueOf(loan.getLoanDate())); 
             ps.setDate(3, java.sql.Date.valueOf(loan.getReturnDate()));
+            
             ps.execute();
             System.out.println("Loan created with success!");
         } catch (SQLException e) {

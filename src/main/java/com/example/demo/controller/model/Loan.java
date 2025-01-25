@@ -9,14 +9,19 @@ public class Loan {
 	private String borrowerName;
 	private LocalDate loanDate;
 	private LocalDate returnDate;
+	private boolean returned;
 //	private List<Book> books;
+
+	public Loan() {
+        this.loanDate = LocalDate.now();
+        this.returnDate = this.loanDate.plusDays(7);
+    }
 	
-	public Loan() {}
-	
-	public Loan(int id, String borrowerName, LocalDate loanDate, LocalDate returnDate) {
+	public Loan(int id, String borrowerName, LocalDate loanDate, LocalDate returnDate, boolean returned) {
 		this.borrowerName = borrowerName;
-		this.loanDate = loanDate;
+		this.loanDate = (loanDate != null) ? loanDate : LocalDate.now();
 	    this.returnDate = (returnDate == null) ? loanDate.plusDays(7) : returnDate;
+	    this.returned = returned;
 	}
 	
 	public void setId(int id) {
@@ -36,7 +41,7 @@ public class Loan {
 	}
 	
 	public void setLoanDate(LocalDate loanDate) {
-		this.loanDate = LocalDate.now();
+		this.loanDate = (loanDate != null) ? loanDate : LocalDate.now();
 	}
 	
 	public LocalDate getLoanDate() {
@@ -44,10 +49,18 @@ public class Loan {
 	}
 	
 	public void setReturnDate(LocalDate returnDate) {
-		this.returnDate = returnDate;
+        this.returnDate = (returnDate != null) ? returnDate : this.loanDate.plusDays(7);
 	}
 	
 	public LocalDate getReturnDate() {
 		return returnDate;
+	}
+	
+	public boolean getIsReturned() {
+		return returned;
+	}
+
+	public void setReturned(boolean returned) {
+		this.returned = returned;
 	}
 }
