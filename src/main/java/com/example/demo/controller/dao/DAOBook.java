@@ -98,7 +98,7 @@ public class DAOBook {
 
         if (conn == null)
         {
-            System.err.println("Conexão com o banco de dados não foi estabelecida.");
+            System.err.println("Connection to the database was not established.");
             return;
         }
 
@@ -108,7 +108,7 @@ public class DAOBook {
             ps.setString(1, book.getTitle());
             ps.setInt(2, book.getCopiesAvailable());
             ps.execute();
-            System.out.println("Livro cadastrado com sucesso!");
+            System.out.println("Book registered successfully!");
         } catch (SQLException e) {
             System.err.println("Error while creating book: " + e.getMessage());
             throw e;
@@ -128,26 +128,66 @@ public class DAOBook {
             int search = ps.executeUpdate();
 
             if (search > 0) {
-                System.out.println("Livro atualizado com sucesso!");
+                System.out.println("Error deleting book:!");
             } else {
-                System.out.println("Livro nao encontrado.");
+                System.out.println("Book not found.");
             }
         } catch (ClassNotFoundException | SQLException e) {
-            System.err.println("Erro ao atualizar livro: " + e.getMessage());
+            System.err.println("Error updating book: " + e.getMessage());
             throw e;
         }
     }
     
-    public void delete(Book bookDTO) throws SQLException, ClassNotFoundException {
+    public boolean delete(Book bookDTO) throws SQLException, ClassNotFoundException {
         String sql = "DELETE FROM BOOK WHERE id = ?";
         try (Connection conn = MySQLConn.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, bookDTO.getId());
-            ps.execute();
+            int rowsAffected = ps.executeUpdate(); 
+            return rowsAffected > 0; 
         } catch (ClassNotFoundException | SQLException e) {
-            System.err.println("Erro ao deletar livro: " + e.getMessage());
+            System.err.println("Error when deleting book: " + e.getMessage());
             throw e;
         }
     }
+
+    
+    public boolean existsByTitle(String title) throws SQLException, ClassNotFoundException {
+        String sql = "SELECT COUNT(*) FROM BOOK WHERE title = ?";
+        try (Connection conn = MySQLConn.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, title);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (ClassNotFoundException | SQLException e) {
+            System.err.println("Error checking existence of title: " + e.getMessage());
+            throw e;
+        }
+        return false;
+    }
+    
+    
+    public void decrementCopiesAvailable(int bookId, int amount) throws SQLException, ClassNotFoundException {
+        String sql = "UPDATE BOOK SET copiesAvailable = copiesAvailable - ? WHERE id = ? AND copiesAvailable > 0";
+        try (Connection conn = MySQLConn.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+        	ps.setInt(1, amount);
+            ps.setInt(2, bookId);
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected == 0) {
+                throw new IllegalArgumentException("No available copies for book ID: " + bookId);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error updating copies available: " + e.getMessage());
+            throw e;
+        }
+    }
+
+
 }

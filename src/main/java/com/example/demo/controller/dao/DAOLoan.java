@@ -2,6 +2,7 @@ package com.example.demo.controller.dao;
 
 import com.example.demo.controller.model.Book;
 import com.example.demo.controller.model.Loan;
+import com.example.demo.controller.dao.DAOBookLoan;
 import com.example.demo.config.MySQLConn;
 import org.springframework.stereotype.Component;
 
@@ -16,9 +17,14 @@ import java.util.List;
 
 @Component
 public class DAOLoan {
-	public DAOLoan() throws SQLException, ClassNotFoundException {
-		this.createTable();
-	}
+	
+	private DAOBookLoan daoBookLoan;
+
+
+	public DAOLoan(DAOBookLoan daoBookLoan) throws SQLException, ClassNotFoundException {
+        this.daoBookLoan = daoBookLoan;
+        this.createTable();  
+    }
 
     public void createTable() throws SQLException, ClassNotFoundException {
         final Connection conn = MySQLConn.getConnection();
@@ -33,12 +39,15 @@ public class DAOLoan {
                 + "borrowerName VARCHAR(100) NOT NULL, "
                 + "loanDate DATE NOT NULL, "
                 + "returnDate DATE,"
-                + "returned TINYINT(1) NOT NULL DEFAULT 0);";
+                + "returned BOOLEAN);";
 
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.executeUpdate();
             System.out.println("Loan table created!");
+        
+            daoBookLoan.createTable(); 
+            
         } catch (SQLException e) {
             System.err.println("Error while creating loan table: " + e.getMessage());
             throw e;
@@ -119,50 +128,102 @@ public class DAOLoan {
     }
     
     
-    public void create(Loan loan) throws SQLException, ClassNotFoundException {
-        Connection conn = MySQLConn.getConnection();
-
-        if (conn == null) {
-            System.err.println("Connection with database failed :(");
-            return;
-        }
-
+    public int create(Loan loan) throws SQLException, ClassNotFoundException {
         String sql = "INSERT INTO LOAN (borrowerName, loanDate, returnDate) VALUES (?, ?, ?)";
+        try (Connection conn = MySQLConn.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
 
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, loan.getBorrowerName());
-            ps.setDate(2, java.sql.Date.valueOf(loan.getLoanDate())); 
+            ps.setDate(2, java.sql.Date.valueOf(loan.getLoanDate()));
             ps.setDate(3, java.sql.Date.valueOf(loan.getReturnDate()));
-            
-            ps.execute();
-            System.out.println("Loan created with success!");
+            ps.executeUpdate();
+
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
         } catch (SQLException e) {
             System.err.println("Error while creating loan: " + e.getMessage());
             throw e;
         }
+        throw new SQLException("Creating loan failed, no ID obtained.");
     }
+
+    
+
+    public Loan getLoanWithBookDetails(int loanId) throws SQLException, ClassNotFoundException {
+	    String loanSql = "SELECT l.id, l.borrowerName, l.loanDate, l.returnDate, l.returned " +
+	                     "FROM LOAN l WHERE l.id = ?";
+	    String bookDetailsSql = "SELECT b.title, bl.amount FROM BOOK_LOAN bl " +
+	                            "JOIN BOOK b ON bl.bookId = b.id WHERE bl.loanId = ?";
+	    
+	    Loan loan = null;
+
+	    try (Connection conn = MySQLConn.getConnection();
+	         PreparedStatement loanStmt = conn.prepareStatement(loanSql);
+	         PreparedStatement bookStmt = conn.prepareStatement(bookDetailsSql)) {
+
+	        loanStmt.setInt(1, loanId);
+	        try (ResultSet loanRs = loanStmt.executeQuery()) {
+	            if (loanRs.next()) {
+	                loan = new Loan();
+	                loan.setId(loanRs.getInt("id"));
+	                loan.setBorrowerName(loanRs.getString("borrowerName"));
+	                Date loanDate = loanRs.getDate("loanDate");
+	                loan.setLoanDate(loanDate != null ? loanDate.toLocalDate() : null);
+	                Date returnDate = loanRs.getDate("returnDate");
+	                loan.setReturnDate(returnDate != null ? returnDate.toLocalDate() : null);
+	                loan.setReturned(loanRs.getBoolean("returned"));
+	            }
+	        }
+
+	        if (loan != null) {
+	            bookStmt.setInt(1, loanId);
+	            try (ResultSet bookRs = bookStmt.executeQuery()) {
+	                List<String> bookDetails = new ArrayList<>();
+	                while (bookRs.next()) {
+	                    String title = bookRs.getString("title");
+	                    int amount = bookRs.getInt("amount");
+	                    bookDetails.add(title + " (Quantity: " + amount + ")");
+	                }
+	                loan.setBookTitles(bookDetails);
+	            }
+	        }
+	    }
+	    return loan;
+	}
     
     
-//    public void update(Loan loanDTO) throws SQLException, ClassNotFoundException {
-//        String sql = "UPDATE LOAN SET borrowerName = ?, copiesAvailable = ? WHERE id = ?";
-//
-//        try (Connection conn = MySQLConn.getConnection();
-//             PreparedStatement ps = conn.prepareStatement(sql)) {
-//
-//            ps.setString(1, bookDTO.getTitle());
-//            ps.setInt(2, bookDTO.getCopiesAvailable());
-//            ps.setInt(3, bookDTO.getId());
-//
-//            int search = ps.executeUpdate();
-//
-//            if (search > 0) {
-//                System.out.println("Livro atualizado com sucesso!");
-//            } else {
-//                System.out.println("Livro nao encontrado.");
-//            }
-//        } catch (ClassNotFoundException | SQLException e) {
-//            System.err.println("Erro ao atualizar livro: " + e.getMessage());
-//            throw e;
-//        }
-//    }
+    public void returnLoan(int loanId) throws SQLException, ClassNotFoundException {
+        String updateLoanSql = "UPDATE LOAN SET returned = true WHERE id = ?";
+        String getBookLoanSql = "SELECT bookId, amount FROM BOOK_LOAN WHERE loanId = ?";
+        String updateBookStockSql = "UPDATE BOOK SET copiesAvailable = copiesAvailable + ? WHERE id = ?";
+
+        try (Connection conn = MySQLConn.getConnection();
+             PreparedStatement updateLoanStmt = conn.prepareStatement(updateLoanSql);
+             PreparedStatement getBookLoanStmt = conn.prepareStatement(getBookLoanSql);
+             PreparedStatement updateBookStockStmt = conn.prepareStatement(updateBookStockSql)) {
+
+            updateLoanStmt.setInt(1, loanId);
+            int rowsUpdated = updateLoanStmt.executeUpdate();
+            if (rowsUpdated == 0) {
+                throw new SQLException("No loan found with ID: " + loanId);
+            }
+
+            getBookLoanStmt.setInt(1, loanId);
+            try (ResultSet rs = getBookLoanStmt.executeQuery()) {
+                while (rs.next()) {
+                    int bookId = rs.getInt("bookId");
+                    int amount = rs.getInt("amount");
+
+                    updateBookStockStmt.setInt(1, amount);
+                    updateBookStockStmt.setInt(2, bookId);
+                    updateBookStockStmt.executeUpdate();
+                }
+            }
+        }
+    }
+
+
 }

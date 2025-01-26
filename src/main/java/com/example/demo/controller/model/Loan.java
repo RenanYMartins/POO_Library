@@ -9,20 +9,21 @@ public class Loan {
 	private String borrowerName;
 	private LocalDate loanDate;
 	private LocalDate returnDate;
+	private List<BookLoan> bookLoans;
 	private boolean returned;
-//	private List<Book> books;
-
-	public Loan() {
-        this.loanDate = LocalDate.now();
-        this.returnDate = this.loanDate.plusDays(7);
-    }
+	private List<String> bookTitles;
 	
-	public Loan(int id, String borrowerName, LocalDate loanDate, LocalDate returnDate, boolean returned) {
-		this.borrowerName = borrowerName;
-		this.loanDate = (loanDate != null) ? loanDate : LocalDate.now();
-	    this.returnDate = (returnDate == null) ? loanDate.plusDays(7) : returnDate;
-	    this.returned = returned;
+	public Loan() {
+		this.loanDate = LocalDate.now();
+        this.returnDate = this.loanDate.plusDays(7);
 	}
+	
+	public Loan(int id, String borrowerName, LocalDate returnDate, List<BookLoan> bookLoans) {
+        this.borrowerName = borrowerName;
+        this.loanDate = (loanDate != null) ? loanDate : LocalDate.now();
+        this.returnDate = (returnDate == null) ? loanDate.plusDays(7) : returnDate;
+        this.bookLoans = bookLoans;
+    }
 	
 	public void setId(int id) {
 		this.id = id;
@@ -49,18 +50,34 @@ public class Loan {
 	}
 	
 	public void setReturnDate(LocalDate returnDate) {
-        this.returnDate = (returnDate != null) ? returnDate : this.loanDate.plusDays(7);
+		this.returnDate = (returnDate != null) ? returnDate : this.loanDate.plusDays(7);
 	}
 	
 	public LocalDate getReturnDate() {
 		return returnDate;
 	}
 	
-	public boolean getIsReturned() {
+	public List<BookLoan> getBookLoans() {
+        return bookLoans;
+    }
+
+    public void setBookLoans(List<BookLoan> bookLoans) {
+        this.bookLoans = bookLoans;
+    }
+    
+    public boolean getIsReturned() {
 		return returned;
 	}
-
+    
 	public void setReturned(boolean returned) {
 		this.returned = returned;
+	}
+
+	public List<String> getBookTitles() {
+	    return bookTitles;
+	}
+
+	public void setBookTitles(List<String> bookTitles) {
+	    this.bookTitles = bookTitles;
 	}
 }
