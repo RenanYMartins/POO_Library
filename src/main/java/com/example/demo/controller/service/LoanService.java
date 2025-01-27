@@ -1,6 +1,7 @@
 package com.example.demo.controller.service;
 
 import com.example.demo.controller.dao.DAOBook;
+
 import com.example.demo.controller.dao.DAOBookLoan;
 import com.example.demo.controller.dao.DAOLoan;
 import com.example.demo.controller.model.Book;
@@ -71,5 +72,15 @@ public class LoanService {
 	    daoLoan.returnLoan(loanId);
 	}
 
-
+	public void deleteLoan(int id) throws SQLException, ClassNotFoundException {
+        if (daoLoan.getById(id) == null) {
+            throw new IllegalArgumentException("Loan not found for deletion.");
+        }
+        Loan loan = new Loan();
+        loan.setId(id);
+        boolean loanDeleted = daoLoan.delete(loan);
+        if (!loanDeleted) {
+            throw new RuntimeException("Failed to delete the loan. Please try again.");
+        }
+    }
 }

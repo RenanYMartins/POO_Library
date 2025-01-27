@@ -14,6 +14,8 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @Component
 public class DAOLoan {
@@ -54,47 +56,60 @@ public class DAOLoan {
         }
     }
     
-    
     public List<Loan> getAll() throws SQLException, ClassNotFoundException {
-        String sql = "SELECT * FROM LOAN";
-        List<Loan> loans = new ArrayList<>();
+        String sql = "SELECT " +
+                     "l.id AS loanId, " +
+                     "l.borrowerName, " +
+                     "l.loanDate, " +
+                     "l.returnDate, " +
+                     "l.returned, " +
+                     "b.title AS bookTitle, " +
+                     "bl.amount AS bookAmount " +
+                     "FROM LOAN l " +
+                     "LEFT JOIN BOOK_LOAN bl ON l.id = bl.loanId " +
+                     "LEFT JOIN BOOK b ON bl.bookId = b.id " +
+                     "ORDER BY l.id";
 
-        try (final Connection conn = MySQLConn.getConnection();
+        List<Loan> loans = new ArrayList<>();
+        Map<Integer, Loan> loanMap = new HashMap<>();
+
+        try (Connection conn = MySQLConn.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                Loan loanDTO = new Loan();
-                loanDTO.setId(rs.getInt("id"));
-                loanDTO.setBorrowerName(rs.getString("borrowerName"));
-                Date loanDate = rs.getDate("loanDate");
-                if (loanDate != null) {
-                    loanDTO.setLoanDate(loanDate.toLocalDate());
+                int loanId = rs.getInt("loanId");
+
+                Loan loan = loanMap.get(loanId);
+                if (loan == null) {
+                    loan = new Loan();
+                    loan.setId(loanId);
+                    loan.setBorrowerName(rs.getString("borrowerName"));
+                    Date loanDate = rs.getDate("loanDate");
+                    loan.setLoanDate(loanDate != null ? loanDate.toLocalDate() : null);
+                    Date returnDate = rs.getDate("returnDate");
+                    loan.setReturnDate(returnDate != null ? returnDate.toLocalDate() : null);
+                    loan.setReturned(rs.getBoolean("returned"));
+                    loan.setBookTitles(new ArrayList<>());
+                    
+                    loans.add(loan);
+                    loanMap.put(loanId, loan);
                 }
-                Date returnDate = rs.getDate("returnDate");
-                if (returnDate != null) {
-                	loanDTO.setReturnDate(returnDate.toLocalDate());
+
+                String bookTitle = rs.getString("bookTitle");
+                int bookAmount = rs.getInt("bookAmount");
+                if (bookTitle != null) {
+                    loan.getBookTitles().add(bookTitle + " (Quantity: " + bookAmount + ")");
                 }
-                loanDTO.setReturned(rs.getBoolean("returned"));
-                loans.add(loanDTO);
             }
-
-            loans.forEach(loan -> {
-                System.out.println("Loan ID: " + loan.getId());
-                System.out.println("Borrower Name : " + loan.getBorrowerName());
-                System.out.println("Loan Date: " + loan.getLoanDate());
-                System.out.println("Return Date: " + loan.getReturnDate());
-                System.out.println("Empréstimo ativo: " + loan.getIsReturned());
-            });
-
-        } catch (ClassNotFoundException | SQLException e) {
-            System.err.println("Error while searching the loans: " + e.getMessage());
+        } catch (SQLException e) {
+            System.err.println("Error while retrieving all loans: " + e.getMessage());
             throw e;
         }
+
         return loans;
     }
-    
-    
+
     public Loan getById(int id) throws SQLException, ClassNotFoundException {
         String sql = "SELECT * FROM LOAN WHERE id = ?";
         Loan loanDTO = null;
@@ -125,8 +140,7 @@ public class DAOLoan {
             throw e;
         }
         return loanDTO;
-    }
-    
+    }    
     
     public int create(Loan loan) throws SQLException, ClassNotFoundException {
         String sql = "INSERT INTO LOAN (borrowerName, loanDate, returnDate) VALUES (?, ?, ?)";
@@ -222,6 +236,20 @@ public class DAOLoan {
                     updateBookStockStmt.executeUpdate();
                 }
             }
+        }
+    }
+    
+    public boolean delete(Loan loanDTO) throws SQLException, ClassNotFoundException {
+        String sql = "DELETE FROM LOAN WHERE id = ?";
+        try (Connection conn = MySQLConn.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, loanDTO.getId());
+            int rowsAffected = ps.executeUpdate(); 
+            return rowsAffected > 0; 
+        } catch (ClassNotFoundException | SQLException e) {
+            System.err.println("Error when deleting loan: " + e.getMessage());
+            throw e;
         }
     }
 

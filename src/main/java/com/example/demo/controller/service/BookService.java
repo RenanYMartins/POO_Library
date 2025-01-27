@@ -1,10 +1,10 @@
 package com.example.demo.controller.service;
 
 import com.example.demo.controller.dao.DAOBook;
+import com.example.demo.controller.dao.DAOBookLoan;
 import com.example.demo.controller.model.Book;
 
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -12,9 +12,11 @@ import java.util.List;
 @Component
 public class BookService {
 	private final DAOBook daoBook;
+	private final DAOBookLoan daoBookLoan;
 	
-	public BookService(DAOBook daoBook) {
+	public BookService(DAOBook daoBook, DAOBookLoan daoBookLoan) {
         this.daoBook = daoBook;
+        this.daoBookLoan = daoBookLoan;
     }
 	
 	public List<Book> getAllBooks() throws SQLException, ClassNotFoundException {
@@ -56,6 +58,13 @@ public class BookService {
         if (daoBook.getById(id) == null) {
             throw new IllegalArgumentException("Book not found for deletion.");
         }
+        
+        boolean loansActive = daoBookLoan.existsLoanWithBookId(id);
+        
+        if(loansActive) {
+        	throw new IllegalArgumentException("Delete not allowed. There are loans with this ID book.");
+        }
+        
         Book book = new Book();
         book.setId(id);
         boolean bookDeleted = daoBook.delete(book);

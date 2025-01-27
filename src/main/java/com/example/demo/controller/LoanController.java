@@ -1,14 +1,11 @@
 package com.example.demo.controller;
 
-import com.example.demo.controller.model.Book;
-import com.example.demo.controller.model.BookLoan;
 import com.example.demo.controller.model.Loan;
 import com.example.demo.controller.service.LoanService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -74,6 +71,18 @@ public class LoanController {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> delete(@PathVariable int id) {
+        try {
+            loanService.deleteLoan(id);
+            return new ResponseEntity<>("Loan deleted successfully!", HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Error when deleting loan.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

@@ -2,6 +2,7 @@ package com.example.demo.controller.dao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.springframework.stereotype.Component;
@@ -49,6 +50,28 @@ public class DAOBookLoan {
 	        System.err.println("Error while inserting into BOOK_LOAN: " + e.getMessage());
 	        throw e;
 	    }
+	}
+	
+	public boolean existsLoanWithBookId(int id) throws SQLException, ClassNotFoundException {
+	    String sql = "SELECT COUNT(*) FROM BOOK_LOAN WHERE bookId = ?";
+	    boolean exists = false;
+
+	    try (Connection conn = MySQLConn.getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setInt(1, id);
+
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (rs.next()) {
+	                exists = rs.getInt(1) > 0; 
+	            }
+	        }
+	    } catch (ClassNotFoundException | SQLException e) {
+	        System.err.println("Error while checking book loan existence: " + e.getMessage());
+	        throw e;
+	    }
+
+	    return exists;
 	}
 
 }
