@@ -76,6 +76,9 @@ public class LoanService {
         if (daoLoan.getById(id) == null) {
             throw new IllegalArgumentException("Loan not found for deletion.");
         }
+        if (daoLoan.loanActiveById(id)) {
+        	throw new IllegalArgumentException("Loan was not returned. It cannot be deleted.");
+        }
         Loan loan = new Loan();
         loan.setId(id);
         boolean loanDeleted = daoLoan.delete(loan);
