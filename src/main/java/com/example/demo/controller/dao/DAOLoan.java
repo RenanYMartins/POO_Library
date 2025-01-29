@@ -41,7 +41,7 @@ public class DAOLoan {
                 + "borrowerName VARCHAR(100) NOT NULL, "
                 + "loanDate DATE NOT NULL, "
                 + "returnDate DATE,"
-                + "returned BOOLEAN);";
+                + "returned BOOLEAN DEFAULT false);";
 
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -253,5 +253,26 @@ public class DAOLoan {
         }
     }
 
+    public boolean loanActiveById(int id) throws SQLException, ClassNotFoundException {
+        String sql = "SELECT COUNT(*) FROM LOAN WHERE id = ? AND returned = false";
+        boolean isActive = false;
 
+        try (Connection conn = MySQLConn.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int count = rs.getInt(1);
+                    isActive = (count > 0);
+                }
+            }
+        } catch (ClassNotFoundException | SQLException e) {
+            System.err.println("Error while checking loan activity: " + e.getMessage());
+            throw e;
+        }
+        return isActive;
+    }
+    
 }
